@@ -111,9 +111,8 @@ document.getElementById('submitBtn').addEventListener('click', function() {
                     model: savedModel,
                     max_tokens: savedMaxTokens,
                     messages: [
-                        { role: 'user', content: { type: 'text', text: prompt } },
-                        { role: 'user', content: { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } } },
-                        { role: 'user', content: { type: 'detail', detail: savedDetail } },
+                        { role: 'user', content: prompt }, // 正确的文本格式
+                        { role: 'user', content: { url: `data:image/jpeg;base64,${base64Image}` } }, // 正确的图片格式
                     ],
                 };
                 sendRequest(formData, index, '图片');
@@ -130,9 +129,8 @@ document.getElementById('submitBtn').addEventListener('click', function() {
                 model: savedModel,
                 max_tokens: savedMaxTokens,
                 messages: [
-                    { role: 'user', content: { type: 'text', text: prompt } },
-                    { role: 'user', content: { type: 'image_url', image_url: { url: url } } },
-                    { role: 'user', content: { type: 'detail', detail: savedDetail } },
+                    { role: 'user', content: prompt }, // 正确的文本格式
+                    { role: 'user', content: { url: url } }, // 正确的图片链接格式
                 ],
             };
             sendRequest(formData, index, '图片链接');
