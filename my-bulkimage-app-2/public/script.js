@@ -1,42 +1,55 @@
-// 全局变量保存用户设置
 let savedApiKey = '';
-let savedModel = 'gpt-4o-mini';  // 默认选择的模型
+let savedModel = 'gpt-4-vision-preview'; // 确保使用支持图像输入的模型
 let savedDetail = 'auto';
 let savedMaxTokens = 300;
 
 // 处理系统设置按钮的显示与隐藏
 document.getElementById('systemSettingsBtn').addEventListener('click', function() {
     const systemSettingsPanel = document.getElementById('systemSettingsPanel');
-    systemSettingsPanel.style.display = systemSettingsPanel.style.display === 'block' ? 'none' : 'block';
+    // 切换系统设置面板的显示/隐藏
+    if (systemSettingsPanel.style.display === 'none' || systemSettingsPanel.style.display === '') {
+        systemSettingsPanel.style.display = 'block'; // 显示设置面板
+    } else {
+        systemSettingsPanel.style.display = 'none'; // 隐藏设置面板
+    }
 });
 
 // 保存 API Key 和系统设置
 document.getElementById('saveApiKey').addEventListener('click', function() {
     const apiKeyInput = document.getElementById('apiKey');
-    savedApiKey = apiKeyInput.value.trim(); // 去除输入的空格
+    savedApiKey = apiKeyInput.value;
 
     if (savedApiKey) {
         apiKeyInput.value = ''; // 清空输入框
         apiKeyInput.style.display = 'none'; // 隐藏 API Key 输入框
         document.getElementById('saveApiKey').style.display = 'none'; // 隐藏保存按钮
         document.getElementById('apiKeyStatus').style.display = 'block'; // 显示已保存提示
-    } else {
-        alert('请输入有效的 API Key');
+
+        // 显示重新输入 API Key 的按钮
+        document.getElementById('reenterApiKey').style.display = 'block';
     }
+});
+
+// 重新输入 API Key
+document.getElementById('reenterApiKey').addEventListener('click', function() {
+    document.getElementById('apiKey').style.display = 'block';
+    document.getElementById('saveApiKey').style.display = 'block';
+    document.getElementById('apiKeyStatus').style.display = 'none';
+    document.getElementById('reenterApiKey').style.display = 'none';
 });
 
 document.getElementById('saveSettings').addEventListener('click', function() {
     savedModel = document.getElementById('modelSelect').value;
     savedDetail = document.getElementById('detailSelect').value;
-    savedMaxTokens = parseInt(document.getElementById('maxTokens').value, 10);
-
+    savedMaxTokens = document.getElementById('maxTokens').value;
     alert('系统设置已保存！');
 });
 
-// 提交按钮点击事件
 document.getElementById('submitBtn').addEventListener('click', function() {
-    const prompt = document.getElementById('prompt').value.trim();
-    const imageUrlsInput = document.getElementById('imageUrls').value.trim(); // 获取图片URL输入框的内容
+    const prompt = document.getElementById('prompt').value;
+    const files = document.getElementById('files').files;
+    const imageUrlsInput = document.getElementById('imageUrls').value.trim();
+
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     const resultContainer = document.getElementById('resultContainer');
@@ -47,73 +60,122 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     progressContainer.style.display = 'block'; // 显示进度条
     progressBar.value = 0; // 重置进度条
 
-    const imageUrls = imageUrlsInput.split(' ').filter(url => url); // 分割输入并移除空值
-    if (imageUrls.length === 0) {
-        alert('请提供至少一个有效的图片URL');
-        return;
-    }
-
+    let totalTasks = files.length + (imageUrlsInput ? imageUrlsInput.split(' ').length : 0);
     let completedTasks = 0;
-    const totalTasks = imageUrls.length;
 
-    // 更新进度条
     const updateProgress = () => {
         completedTasks++;
-        const progressPercentage = (completedTasks / totalTasks) * 100;
+        let progressPercentage = (completedTasks / totalTasks) * 100;
         progressBar.value = progressPercentage;
 
         if (completedTasks === totalTasks) {
             document.getElementById('progressText').textContent = '处理完成！';
+            progressContainer.style.display = 'none'; // 隐藏进度条
         }
     };
 
-    // 处理 API 响应
-    const handleApiResponse = (index, interpretation) => {
+    const handleApiResponse = (index, type, interpretation) => {
         const resultElement = document.createElement('p');
-        resultElement.textContent = `图片链接 ${index + 1} 结果: ${interpretation}`;
+        resultElement.textContent = `${type} ${index + 1} 结果: ${interpretation}`;
         resultContainer.appendChild(resultElement);
     };
 
-    // 发送 API 请求
-    const sendRequest = async (imageUrl, index) => {
-        const formData = {
-            model: savedModel,
-            max_tokens: savedMaxTokens,
-            messages: [
-                { role: 'user', content: prompt }, // 文本消息
-                { role: 'user', content: { type: 'image_url', image_url: { url: imageUrl } } } // 图片消息
-            ]
-        };
+    const sendRequest = (formData, index, type) => {
+        console.log(`发送请求: ${type} ${index + 1}`);
+        console.log('请求体:', JSON.stringify(formData));
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${savedApiKey}`,
-                },
-                body: JSON.stringify(formData),
-            });
-
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${savedApiKey}`,
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(async response => {
+            console.log(`API 响应状态: ${response.status}`); // 打印响应状态
             const responseData = await response.json();
+            console.log('响应数据:', responseData); // 打印响应内容
+
             if (!response.ok) {
                 throw new Error(`请求失败: ${response.status} - ${responseData.error ? responseData.error.message : '未知错误'}`);
             }
 
-            const interpretation = responseData.choices?.[0]?.message?.content || '未返回有效结果';
-            handleApiResponse(index, interpretation);
-        } catch (error) {
-            console.error(`请求图片链接 ${index + 1} 出错:`, error.message);
-            handleApiResponse(index, `错误: ${error.message}`);
-        } finally {
-            updateProgress(); // 无论请求成功或失败，都更新进度条
+            if (responseData.choices && responseData.choices.length > 0) {
+                const interpretation = responseData.choices[0].message.content;
+                handleApiResponse(index, type, interpretation);
+            } else {
+                handleApiResponse(index, type, "未返回有效结果");
+            }
+            updateProgress(); // 更新进度条
+        })
+        .catch(error => {
+            console.error(`请求 ${type} ${index + 1} 出错:`, error.message);
+            handleApiResponse(index, type, `错误: ${error.message}`);
+            updateProgress();
+        });
+    };
+
+    const processFiles = () => {
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.readAsDataURL(files[i]);
+
+            reader.onload = function () {
+                const base64Image = reader.result.split(',')[1];
+                const formData = {
+                    "model": savedModel,
+                    "max_tokens": parseInt(savedMaxTokens),
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {"type": "image_url", "image_url": `data:image/jpeg;base64,${base64Image}`},
+                                {"type": "text", "text": savedDetail}
+                            ]
+                        }
+                    ]
+                };
+                sendRequest(formData, i, '图片'); // 调用 sendRequest 函数
+            };
         }
     };
 
-    // 分批处理每个图片URL
-    imageUrls.forEach((url, index) => {
-        sendRequest(url, index); // 逐个发送图片URL的请求
-    });
+    const processUrls = () => {
+        const imageUrls = imageUrlsInput.split(' ');
+        for (let j = 0; j < imageUrls.length; j++) {
+            const formData = {
+                "model": savedModel,
+                "max_tokens": parseInt(savedMaxTokens),
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": imageUrls[j]},
+                            {"type": "text", "text": savedDetail}
+                        ]
+                    }
+                ]
+            };
+            sendRequest(formData, j, '图片链接'); // 调用 sendRequest 函数
+        }
+    };
+
+    // 处理文件上传和 URL 上传
+    if (files.length > 0) {
+        processFiles();
+    }
+    if (imageUrlsInput) {
+        processUrls();
+    }
+
+    // 如果没有文件和 URL
+    if (files.length === 0 && !imageUrlsInput) {
+        alert('请上传文件或输入图片 URL');
+        progressContainer.style.display = 'none'; // 隐藏进度条
+    }
 });
 
 // 一键复制结果
