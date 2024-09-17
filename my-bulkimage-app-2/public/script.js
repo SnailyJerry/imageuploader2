@@ -93,6 +93,92 @@ document.getElementById('submitBtn').addEventListener('click', function() {
         });
     };
 
+// 示例：在这里放置 sendRequest 函数
+const sendRequest = (formData, index, type) => {
+    console.log(`发送请求: ${type} ${index + 1}`);
+    console.log('请求体:', JSON.stringify(formData));
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${savedApiKey}`,
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(async response => {
+        console.log(`API 响应状态: ${response.status}`); // 打印响应状态
+        const responseData = await response.json();
+        console.log('响应数据:', responseData); // 打印响应内容
+
+        if (!response.ok) {
+            throw new Error(`请求失败: ${response.status} - ${responseData.error ? responseData.error.message : '未知错误'}`);
+        }
+
+        if (responseData.choices && responseData.choices.length > 0) {
+            const interpretation = responseData.choices[0].message.content;
+            handleApiResponse(index, type, interpretation);
+        } else {
+            handleApiResponse(index, type, "未返回有效结果");
+        }
+        updateProgress(); // 更新进度条
+    })
+    .catch(error => {
+        console.error(`请求 ${type} ${index + 1} 出错:`, error.message);
+        handleApiResponse(index, type, `错误: ${error.message}`);
+        updateProgress();
+    });
+};
+
+// 处理文件的函数
+const processFiles = () => {
+    for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.readAsDataURL(files[i]);
+
+        reader.onload = function () {
+            const base64Image = reader.result.split(',')[1];
+            const formData = {
+                "model": savedModel,
+                "max_tokens": parseInt(savedMaxTokens),
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": { "url": `data:image/jpeg;base64,${base64Image}` }},
+                            {"type": "detail", "detail": savedDetail}
+                        ]
+                    }
+                ]
+            };
+            sendRequest(formData, i, '图片'); // 调用 sendRequest 函数
+        };
+    }
+};
+
+// 处理 URL 的函数
+const processUrls = () => {
+    const imageUrls = imageUrlsInput.split(' ');
+    for (let j = 0; j < imageUrls.length; j++) {
+        const formData = {
+            "model": savedModel,
+            "max_tokens": parseInt(savedMaxTokens),
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": { "url": imageUrls[j] }},
+                        {"type": "detail", "detail": savedDetail}
+                    ]
+                }
+            ];
+        sendRequest(formData, j, '图片链接'); // 调用 sendRequest 函数
+    }
+};
+
+    
     const processFiles = () => {
         for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
