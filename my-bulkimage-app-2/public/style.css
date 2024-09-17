@@ -3,7 +3,28 @@ body {
     margin: 20px;
 }
 
-h1 {
+.container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.settings {
+    width: 45%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.results {
+    width: 45%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+h2 {
     color: #333;
 }
 
@@ -15,7 +36,7 @@ label {
     font-weight: bold;
 }
 
-textarea, input[type="text"], input[type="file"] {
+textarea, input[type="text"], input[type="file"], select, input[type="number"] {
     width: 100%;
     padding: 10px;
     margin-top: 5px;
@@ -24,16 +45,16 @@ textarea, input[type="text"], input[type="file"] {
 }
 
 textarea {
-    font-size: 16px; /* 字体大小 */
-    line-height: 1.5; /* 行高 */
+    font-size: 16px;
+    line-height: 1.5;
 }
 
 #prompt {
-    height: 150px; /* 放大 Prompt 输入框的高度 */
+    height: 150px;
 }
 
 #imageUrls {
-    height: 120px; /* 放大 URL 输入框的高度 */
+    height: 120px;
 }
 
 button {
@@ -47,4 +68,40 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+#resultContainer {
+    height: 400px;
+    overflow-y: auto;
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    white-space: pre-wrap; /* 保持文本换行 */
+}
+
+/* 进度条 */
+#progressContainer {
+    margin-top: 15px;
+}
+
+#progressBar {
+    width: 100%;
+    height: 20px;
+}
+
+#progressText {
+    margin-left: 10px;
+}
+
+/* 系统设置面板 */
+#systemSettingsBtn {
+    margin-bottom: 15px;
+}
+
+#systemSettingsPanel {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 5px;
 }
