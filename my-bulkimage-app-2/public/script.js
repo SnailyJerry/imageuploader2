@@ -1,6 +1,6 @@
 // 全局变量保存用户设置
 let savedApiKey = '';
-let savedModel = 'gpt-4o-mini';
+let savedModel = 'gpt-4o-mini';  // 默认选择的模型
 let savedDetail = 'auto';
 let savedMaxTokens = 300;
 
@@ -36,8 +36,7 @@ document.getElementById('saveSettings').addEventListener('click', function() {
 // 提交按钮点击事件
 document.getElementById('submitBtn').addEventListener('click', function() {
     const prompt = document.getElementById('prompt').value.trim();
-    const files = document.getElementById('files').files;
-    const imageUrlsInput = document.getElementById('imageUrls').value.trim();
+    const imageUrlsInput = document.getElementById('imageUrls').value.trim(); // 获取图片URL输入框的内容
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     const resultContainer = document.getElementById('resultContainer');
@@ -48,13 +47,14 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     progressContainer.style.display = 'block'; // 显示进度条
     progressBar.value = 0; // 重置进度条
 
-    let totalTasks = files.length + (imageUrlsInput ? imageUrlsInput.split(' ').length : 0);
-    if (totalTasks === 0) {
-        alert('请上传文件或提供图片URL');
+    const imageUrls = imageUrlsInput.split(' ').filter(url => url); // 分割输入并移除空值
+    if (imageUrls.length === 0) {
+        alert('请提供至少一个有效的图片URL');
         return;
     }
 
     let completedTasks = 0;
+    const totalTasks = imageUrls.length;
 
     // 更新进度条
     const updateProgress = () => {
@@ -68,14 +68,23 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     };
 
     // 处理 API 响应
-    const handleApiResponse = (index, type, interpretation) => {
+    const handleApiResponse = (index, interpretation) => {
         const resultElement = document.createElement('p');
-        resultElement.textContent = `${type} ${index + 1} 结果: ${interpretation}`;
+        resultElement.textContent = `图片链接 ${index + 1} 结果: ${interpretation}`;
         resultContainer.appendChild(resultElement);
     };
 
     // 发送 API 请求
-    const sendRequest = async (formData, index, type) => {
+    const sendRequest = async (imageUrl, index) => {
+        const formData = {
+            model: savedModel,
+            max_tokens: savedMaxTokens,
+            messages: [
+                { role: 'user', content: prompt }, // 文本消息
+                { role: 'user', content: { type: 'image_url', image_url: { url: imageUrl } } } // 图片消息
+            ]
+        };
+
         try {
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -92,54 +101,19 @@ document.getElementById('submitBtn').addEventListener('click', function() {
             }
 
             const interpretation = responseData.choices?.[0]?.message?.content || '未返回有效结果';
-            handleApiResponse(index, type, interpretation);
+            handleApiResponse(index, interpretation);
         } catch (error) {
-            console.error(`请求 ${type} ${index + 1} 出错:`, error.message);
-            handleApiResponse(index, type, `错误: ${error.message}`);
+            console.error(`请求图片链接 ${index + 1} 出错:`, error.message);
+            handleApiResponse(index, `错误: ${error.message}`);
         } finally {
             updateProgress(); // 无论请求成功或失败，都更新进度条
         }
     };
 
-    // 处理图片文件
-    const processFiles = () => {
-        Array.from(files).forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function () {
-                const base64Image = reader.result.split(',')[1];
-                const formData = {
-                    model: savedModel,
-                    max_tokens: savedMaxTokens,
-                    messages: [
-                        { role: 'user', content: prompt }, // 正确的文本格式
-                        { role: 'user', content: { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } } }, // 正确的图片格式
-                    ],
-                };
-                sendRequest(formData, index, '图片');
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-
-    // 处理图片 URL
-    const processUrls = () => {
-        const imageUrls = imageUrlsInput.split(' ');
-        imageUrls.forEach((url, index) => {
-            const formData = {
-                model: savedModel,
-                max_tokens: savedMaxTokens,
-                messages: [
-                    { role: 'user', content: prompt }, // 正确的文本格式
-                    { role: 'user', content: { type: 'image_url', image_url: { url: url } } }, // 正确的图片链接格式
-                ],
-            };
-            sendRequest(formData, index, '图片链接');
-        });
-    };
-
-    // 处理文件上传和 URL 上传
-    if (files.length > 0) processFiles();
-    if (imageUrlsInput) processUrls();
+    // 分批处理每个图片URL
+    imageUrls.forEach((url, index) => {
+        sendRequest(url, index); // 逐个发送图片URL的请求
+    });
 });
 
 // 一键复制结果
