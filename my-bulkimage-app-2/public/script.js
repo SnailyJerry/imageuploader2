@@ -6,7 +6,12 @@ let savedMaxTokens = 300;
 // 处理系统设置按钮的显示与隐藏
 document.getElementById('systemSettingsBtn').addEventListener('click', function() {
     const systemSettingsPanel = document.getElementById('systemSettingsPanel');
-    systemSettingsPanel.style.display = systemSettingsPanel.style.display === 'none' ? 'block' : 'none';
+    // 切换系统设置面板的显示/隐藏
+    if (systemSettingsPanel.style.display === 'none' || systemSettingsPanel.style.display === '') {
+        systemSettingsPanel.style.display = 'block'; // 显示设置面板
+    } else {
+        systemSettingsPanel.style.display = 'none'; // 隐藏设置面板
+    }
 });
 
 // 保存 API Key 和系统设置
@@ -64,6 +69,9 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     };
 
     const sendRequest = (formData, index, type) => {
+        console.log(`发送请求: ${type} ${index + 1}`);
+        console.log('请求体:', JSON.stringify(formData));
+
         fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -72,15 +80,17 @@ document.getElementById('submitBtn').addEventListener('click', function() {
             },
             body: JSON.stringify(formData)
         })
-        .then(response => {
+        .then(async response => {
+            console.log(`API 响应状态: ${response.status}`); // 打印响应状态
+            const responseData = await response.json();
+            console.log('响应数据:', responseData); // 打印响应内容
+
             if (!response.ok) {
-                throw new Error(`请求失败: ${response.status}`);
+                throw new Error(`请求失败: ${response.status} - ${responseData.error ? responseData.error.message : '未知错误'}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.choices && data.choices.length > 0) {
-                const interpretation = data.choices[0].message.content;
+
+            if (responseData.choices && responseData.choices.length > 0) {
+                const interpretation = responseData.choices[0].message.content;
                 handleApiResponse(index, type, interpretation);
             } else {
                 handleApiResponse(index, type, "未返回有效结果");
@@ -88,97 +98,12 @@ document.getElementById('submitBtn').addEventListener('click', function() {
             updateProgress(); // 更新进度条
         })
         .catch(error => {
+            console.error(`请求 ${type} ${index + 1} 出错:`, error.message);
             handleApiResponse(index, type, `错误: ${error.message}`);
             updateProgress();
         });
     };
 
-// 示例：在这里放置 sendRequest 函数
-const sendRequest = (formData, index, type) => {
-    console.log(`发送请求: ${type} ${index + 1}`);
-    console.log('请求体:', JSON.stringify(formData));
-
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${savedApiKey}`,
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(async response => {
-        console.log(`API 响应状态: ${response.status}`); // 打印响应状态
-        const responseData = await response.json();
-        console.log('响应数据:', responseData); // 打印响应内容
-
-        if (!response.ok) {
-            throw new Error(`请求失败: ${response.status} - ${responseData.error ? responseData.error.message : '未知错误'}`);
-        }
-
-        if (responseData.choices && responseData.choices.length > 0) {
-            const interpretation = responseData.choices[0].message.content;
-            handleApiResponse(index, type, interpretation);
-        } else {
-            handleApiResponse(index, type, "未返回有效结果");
-        }
-        updateProgress(); // 更新进度条
-    })
-    .catch(error => {
-        console.error(`请求 ${type} ${index + 1} 出错:`, error.message);
-        handleApiResponse(index, type, `错误: ${error.message}`);
-        updateProgress();
-    });
-};
-
-// 处理文件的函数
-const processFiles = () => {
-    for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.readAsDataURL(files[i]);
-
-        reader.onload = function () {
-            const base64Image = reader.result.split(',')[1];
-            const formData = {
-                "model": savedModel,
-                "max_tokens": parseInt(savedMaxTokens),
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": { "url": `data:image/jpeg;base64,${base64Image}` }},
-                            {"type": "detail", "detail": savedDetail}
-                        ]
-                    }
-                ]
-            };
-            sendRequest(formData, i, '图片'); // 调用 sendRequest 函数
-        };
-    }
-};
-
-// 处理 URL 的函数
-const processUrls = () => {
-    const imageUrls = imageUrlsInput.split(' ');
-    for (let j = 0; j < imageUrls.length; j++) {
-        const formData = {
-            "model": savedModel,
-            "max_tokens": parseInt(savedMaxTokens),
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": { "url": imageUrls[j] }},
-                        {"type": "detail", "detail": savedDetail}
-                    ]
-                }
-            ];
-        sendRequest(formData, j, '图片链接'); // 调用 sendRequest 函数
-    }
-};
-
-    
     const processFiles = () => {
         for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
@@ -200,7 +125,7 @@ const processUrls = () => {
                         }
                     ]
                 };
-                sendRequest(formData, i, '图片');
+                sendRequest(formData, i, '图片'); // 调用 sendRequest 函数
             };
         }
     };
@@ -220,9 +145,8 @@ const processUrls = () => {
                             {"type": "detail", "detail": savedDetail}
                         ]
                     }
-                ]
-            };
-            sendRequest(formData, j, '图片链接');
+                ];
+            sendRequest(formData, j, '图片链接'); // 调用 sendRequest 函数
         }
     };
 
