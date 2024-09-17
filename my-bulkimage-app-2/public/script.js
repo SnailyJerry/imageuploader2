@@ -72,11 +72,24 @@ document.getElementById('submitBtn').addEventListener('click', function() {
             },
             body: JSON.stringify(formData)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            const interpretation = data.choices[0].message.content;
-            handleApiResponse(index, type, interpretation);
+            if (data.choices && data.choices.length > 0) {
+                const interpretation = data.choices[0].message.content;
+                handleApiResponse(index, type, interpretation);
+            } else {
+                handleApiResponse(index, type, "未返回有效结果");
+            }
             updateProgress(); // 更新进度条
+        })
+        .catch(error => {
+            handleApiResponse(index, type, `错误: ${error.message}`);
+            updateProgress();
         });
     };
 
@@ -89,7 +102,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
                 const base64Image = reader.result.split(',')[1];
                 const formData = {
                     "model": savedModel,
-                    "max_tokens": savedMaxTokens,
+                    "max_tokens": parseInt(savedMaxTokens),
                     "messages": [
                         {
                             "role": "user",
@@ -111,7 +124,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
         for (let j = 0; j < imageUrls.length; j++) {
             const formData = {
                 "model": savedModel,
-                "max_tokens": savedMaxTokens,
+                "max_tokens": parseInt(savedMaxTokens),
                 "messages": [
                     {
                         "role": "user",
