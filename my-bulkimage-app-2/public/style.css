@@ -1,6 +1,8 @@
+/* 全局样式 */
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
+    background-color: #f4f4f4; /* 提供更柔和的背景 */
 }
 
 header {
@@ -11,6 +13,7 @@ header {
 header h1 {
     font-size: 2.5rem;
     margin: 0;
+    color: #333;
 }
 
 header .slogan {
@@ -18,52 +21,50 @@ header .slogan {
     color: #666;
 }
 
+/* 布局样式 */
 .container {
     display: flex;
     justify-content: space-between;
+    gap: 20px; /* 提供更清晰的布局间隔 */
 }
 
-.settings {
+/* 左侧设置区样式 */
+.settings, .results {
     width: 45%;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    background-color: #f9f9f9;
+    background-color: #ffffff; /* 设置白色背景以更清晰地展示内容 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
 }
 
-.results {
-    width: 45%;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
+/* 标题样式 */
 h2 {
     color: #333;
 }
 
+/* 表单控件样式 */
 div {
     margin-bottom: 15px;
 }
 
 label {
     font-weight: bold;
+    display: block; /* 将标签和输入框分开 */
+    margin-bottom: 5px;
 }
 
 textarea, input[type="text"], input[type="file"], select, input[type="number"] {
     width: 100%;
     padding: 10px;
-    margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
-}
-
-textarea {
+    margin-top: 5px;
     font-size: 16px;
-    line-height: 1.5;
+    box-sizing: border-box; /* 确保元素宽度包括内边距和边框 */
 }
 
+/* 特殊的文本域高度 */
 #prompt {
     height: 150px;
 }
@@ -72,6 +73,7 @@ textarea {
     height: 120px;
 }
 
+/* 按钮样式 */
 button {
     padding: 10px 20px;
     background-color: #007BFF;
@@ -79,12 +81,14 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.3s ease; /* 添加过渡效果 */
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #0056b3; /* 悬停时的颜色变化 */
 }
 
+/* 结果显示区域 */
 #resultContainer {
     height: 400px;
     overflow-y: auto;
@@ -93,30 +97,50 @@ button:hover {
     border: 1px solid #ccc;
     margin-bottom: 10px;
     white-space: pre-wrap; /* 保持文本换行 */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); /* 内部阴影效果 */
 }
 
-/* 进度条 */
+/* 进度条样式 */
 #progressContainer {
     margin-top: 15px;
+    display: none; /* 默认隐藏 */
 }
 
 #progressBar {
     width: 100%;
     height: 20px;
+    border-radius: 5px; /* 添加圆角 */
+    background-color: #e0e0e0;
 }
 
 #progressText {
     margin-left: 10px;
+    font-size: 14px;
+    color: #555;
 }
 
-/* 系统设置面板 */
+/* 系统设置按钮和面板样式 */
 #systemSettingsBtn {
     margin-bottom: 15px;
 }
 
 #systemSettingsPanel {
     border: 1px solid #ccc;
-    padding: 10px;
+    padding: 15px;
     background-color: #f1f1f1;
     border-radius: 5px;
+    display: none; /* 初始隐藏 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: stretch; /* 在移动设备上使元素占据整个宽度 */
+    }
+
+    .settings, .results {
+        width: 100%;
+    }
 }
