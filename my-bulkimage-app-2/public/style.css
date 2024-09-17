@@ -23,6 +23,19 @@ textarea, input[type="text"], input[type="file"] {
     border-radius: 5px;
 }
 
+textarea {
+    font-size: 16px; /* 字体大小 */
+    line-height: 1.5; /* 行高 */
+}
+
+#prompt {
+    height: 150px; /* 放大 Prompt 输入框的高度 */
+}
+
+#imageUrls {
+    height: 120px; /* 放大 URL 输入框的高度 */
+}
+
 button {
     padding: 10px 20px;
     background-color: #007BFF;
